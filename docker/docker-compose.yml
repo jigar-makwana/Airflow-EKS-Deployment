@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  webserver:
+    image: my-airflow-image
+    ports:
+      - "8080:8080"
+    environment:
+      - AIRFLOW__WEBSERVER__AUTHENTICATE=True
+      - AIRFLOW__WEBSERVER__AUTH_BACKEND=airflow.contrib.auth.backends.password_auth
+      - AIRFLOW__WEBSERVER__BASE_URL=http://webserver:8080
+      - AIRFLOW__WEBSERVER__SECRET_KEY=password
+    networks:
+      - airflow_network
+    deploy:
+      replicas: 2
+      placement:
+        constraints: [node.role == manager]
+
+  scheduler:
+    image: my-airflow-image
+    environment:
+      - AIRFLOW_HOME=/airflow
+    command: ["airflow", "scheduler"]
+    networks:
+      - airflow_network
+    deploy:
+      replicas: 2
+      placement:
+        constraints: [node.role == manager]
+
+  worker:
+    image: my-airflow-image
+    environment:
+      - AIRFLOW_HOME=/airflow
+    command: ["airflow", "worker"]
+    networks:
+      - airflow_network
+    deploy:
+      replicas: 4
+      placement:
+        constraints: [node.role == worker]
+
+networks:
+  airflow_network:
+    driver: overlay
